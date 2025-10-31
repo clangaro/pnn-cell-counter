@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pnn-cell-counter"
+version = "0.1.0"
+description = "Automated extraction of PNN neuron crops from confocal images."
+authors = [{name = "Carolina Langaro"}]
+requires-python = ">=3.10"
+dependencies = ["opencv-python", "numpy", "pillow"]
+
+[project.scripts]
+pnn-counter = "pnn_counter.detect_arrows:main"
