@@ -343,7 +343,7 @@ def process_folder(folder_path: str) -> None:
 
 def main() -> None:
     """Entry point for command-line execution."""
-    process_folder("/Users/carolinalangaro/Desktop/pnn-cell-counter/data/id_78")
+    process_folder("/Users/carolinalangaro/Desktop/pnn-cell-counter/data/id41")
 
 
 if __name__ == "__main__":
