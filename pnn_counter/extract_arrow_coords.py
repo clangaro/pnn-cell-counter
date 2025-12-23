@@ -21,6 +21,20 @@ from typing import Dict, List, Tuple
 import cv2
 import numpy as np
 
+import subprocess
+
+# -------------------------------------------------------------------------
+# Notifications
+# -------------------------------------------------------------------------
+
+def notify_done(message: str = "Arrow extraction finished") -> None:
+    subprocess.run([
+        "osascript",
+        "-e",
+        f'display notification "{message}" with title "pnn-cell-counter"'
+    ])
+
+
 # -------------------------------------------------------------------------
 # Logging
 # -------------------------------------------------------------------------
@@ -160,8 +174,11 @@ def extract_folder(folder_path: str, out_csv: str = "outputs/arrow_coords.csv") 
     logger.info("Saved arrow coordinates to %s", out_csv_path)
 
 def main() -> None:
-    # Change id folder as needed
-    extract_folder("/Users/carolinalangaro/Desktop/pnn-cell-counter/data/id_45")
+    extract_folder("/Users/carolinalangaro/Desktop/pnn-cell-counter/data/id_47")
+
+    notify_done("Arrow extraction finished for id_47")
 
 if __name__ == "__main__":
     main()
+
+
