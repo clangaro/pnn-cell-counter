@@ -174,9 +174,9 @@ def extract_folder(folder_path: str, out_csv: str = "outputs/arrow_coords.csv") 
     logger.info("Saved arrow coordinates to %s", out_csv_path)
 
 def main() -> None:
-    extract_folder("/Users/carolinalangaro/Desktop/pnn-cell-counter/data/id_47")
+    extract_folder("/Users/carolinalangaro/Desktop/pnn-cell-counter/data/id83")
 
-    notify_done("Arrow extraction finished for id_47")
+    notify_done("Arrow extraction finished for id_83")
 
 if __name__ == "__main__":
     main()
