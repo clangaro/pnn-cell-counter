@@ -73,6 +73,49 @@ def main() -> None:
     # Further cropping logic would go here.
     notify_done("Arrow coordinate loading and grouping finished.")
 
+import re
+import cv2
+import numpy as np
+from pathlib import Path
+from typing import Optional
+
+FOCUS_PATCH = 64  # same idea as before
+
+def focus_score_gray(patch: np.ndarray) -> float:
+    return float(cv2.Laplacian(patch, cv2.CV_32F).var())
+
+def pick_best_raw_z(id_folder: Path, scene_id: int, x: int, y: int) -> Optional[Path]:
+    """
+    Given an id folder (e.g., data/id_65), pick the sharpest z-slice
+    for the specified scene around (x,y).
+    """
+    # Match files containing _s{scene}z{z}... with .jpg/.jpeg
+    candidates = sorted(id_folder.glob(f"*s{scene_id}z*.jp*g"))
+    if not candidates:
+        return None
+
+    best_path = None
+    best_score = -1.0
+    half = FOCUS_PATCH // 2
+
+    for p in candidates:
+        img = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            continue
+
+        h, w = img.shape[:2]
+        x1, y1 = max(0, x - half), max(0, y - half)
+        x2, y2 = min(w, x + half), min(h, y + half)
+        patch = img[y1:y2, x1:x2]
+        if patch.size == 0:
+            continue
+
+        s = focus_score_gray(patch)
+        if s > best_score:
+            best_score = s
+            best_path = p
+
+    return best_path
 
 if __name__ == "__main__":
     main()
