@@ -9,10 +9,18 @@ Purpose:
     `<name>.jpg_info.xml` + `<name>.jpg_metadata.xml` files, at which point
     the existing audit runs unchanged over any CZI archive.
 
-Usage:
-    python scripts/extract_czi_metadata_recon.py <path/to/one.czi>
-    python scripts/extract_czi_metadata_recon.py <path/to/directory>
-    python scripts/extract_czi_metadata_recon.py <path> --out <out_dir>
+Usage — two ways:
+
+1) Interactive (no arguments):
+       python scripts/extract_czi_metadata_recon.py
+   The script will prompt for the CZI path. You can drag-and-drop a CZI
+   file or folder from Finder / File Explorer into the terminal after the
+   prompt, then press Enter.
+
+2) Command-line (for scripting or if the interactive prompt is skipped):
+       python scripts/extract_czi_metadata_recon.py <path/to/one.czi>
+       python scripts/extract_czi_metadata_recon.py <path/to/directory>
+       python scripts/extract_czi_metadata_recon.py <path> --out <out_dir>
 
 Output (per input CZI, written to --out, default ./czi_recon/):
     <stem>.recon.xml         raw CZI metadata block, pretty-printed
@@ -134,14 +142,49 @@ def _collect_czis(target: Path) -> list[Path]:
     return []
 
 
+def _clean_pasted_path(raw: str) -> str:
+    """Terminal drag-and-drop and shell copy/paste often wrap paths in
+    quotes and/or escape spaces. Undo those so Path() gets a clean string."""
+    raw = raw.strip()
+    # strip surrounding quotes (', ", curly)
+    for pair in (("'", "'"), ('"', '"'), ('“', '”'), ('‘', '’')):
+        if len(raw) >= 2 and raw.startswith(pair[0]) and raw.endswith(pair[1]):
+            raw = raw[1:-1]
+            break
+    # shell-escaped spaces: "\ " -> " "
+    raw = raw.replace('\\ ', ' ')
+    return raw.strip()
+
+
+def _prompt_for_path() -> str:
+    print('CZI recon — dumps metadata XML from CZI files for audit.')
+    print()
+    print('Paste (or drag-and-drop from Finder / File Explorer) the path to a')
+    print('CZI file OR a folder containing CZIs, then press Enter.')
+    print('Press Ctrl+C at any time to cancel.')
+    print()
+    try:
+        raw = input('CZI path: ')
+    except (EOFError, KeyboardInterrupt):
+        print()
+        sys.exit('Cancelled.')
+    return _clean_pasted_path(raw)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__ or '')
-    ap.add_argument('path', help='CZI file or directory containing CZIs')
+    ap.add_argument('path', nargs='?', default=None,
+                    help='CZI file or directory (optional — will prompt if omitted)')
     ap.add_argument('--out', default='czi_recon',
                     help='output directory (default: ./czi_recon/)')
     args = ap.parse_args()
 
-    target = Path(args.path).expanduser().resolve()
+    path_str = args.path or _prompt_for_path()
+    if not path_str:
+        sys.exit('No path given.')
+    target = Path(path_str).expanduser().resolve()
+    if not target.exists():
+        sys.exit(f'Path does not exist: {target}')
     czis = _collect_czis(target)
     if not czis:
         sys.exit(f'No .czi files found at {target}')
