@@ -6,3 +6,11 @@ data/
 .DS_Store
 logs/
 outputs/
+# YOLO pretrained weights auto-downloaded by ultralytics — do not commit
+yolov8n.pt
+yolov8s.pt
+yolov8m.pt
+yolov8l.pt
+yolov8x.pt
+# Local CZI recon dumps
+czi_recon/

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import re
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass
@@ -36,6 +37,45 @@ STROKE_LABEL = {
     '#FF9900CC': 'double',
 }
 STROKE_BLUE_EXCLUDE = '#FF0000FF'
+
+# --- ROI name canonicalisation (see DECISIONS.md, 2026-06-03 entries) ---
+#
+# Spelling normalisation applied to every Bezier <Name> before downstream use.
+# id43's numeric suffixes (AC1, CA11, ...) are intentionally NOT stripped here
+# until the s0 diagnostic overlay resolves what the suffixes mean.
+ROI_NAME_NORMALIZATION: dict[str, str] = {
+    'ACA': 'AC',
+    'ACC': 'AC',  # precautionary — no animal currently uses it
+}
+
+# Animals whose arrows are blanket-tagged region="UNKNOWN" regardless of
+# their Bezier names. Arrows still contribute labels (single_pv / double),
+# they just cannot be used for per-region stratification.
+#   - id69, id70: every Bezier is named 'Area' (no semantic names)
+#   - id43:       polygons are under-drawn (neurons that visibly belong in
+#                 ILA1 sit outside the ILA1 polygon — PIP is unreliable)
+REGION_UNKNOWN_ANIMALS: set[str] = {
+    '2025_01_08__2395_id43_XML',
+    '2025_05_20__3221_id69_XML',
+    '2025_05_20__3222_id70_XML',
+}
+
+# Scenes that are dropped entirely (no arrows used from them). 0-based StartS.
+DROPPED_SCENES: dict[str, set[int]] = {
+    '2025_07_15__3472_id80_XML': {3},   # empty: no Beziers, no arrows
+}
+
+# Scenes where every arrow is forced to region="UNKNOWN" (overrides PIP).
+# Used when a scene's Beziers are all 'Area' placeholders OR when we have
+# manually decided the scene's region info is unusable. 0-based StartS.
+UNKNOWN_REGION_SCENES: dict[str, set[int]] = {
+    '2025_07_15__3472_id80_XML': {2},   # 4 Area Beziers, no semantic names
+}
+
+
+def normalize_roi_name(name: str) -> str:
+    """Apply ROI canonicalisation map. Returns the input unchanged if not in the map."""
+    return ROI_NAME_NORMALIZATION.get(name.strip(), name.strip())
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +192,55 @@ def parse_animal(animal_dir: Path) -> tuple[list[ArrowRecord], list[Anomaly], in
     return records, anomalies, blue_excluded
 
 
+_ANIMAL_ID_RE = re.compile(r'(id\d+)')
+
+
+def _animal_id(folder_name: str) -> str | None:
+    """Extract the canonical 'idNN' segment from a folder name."""
+    m = _ANIMAL_ID_RE.search(folder_name)
+    return m.group(1) if m else None
+
+
+def _variant_rank(folder_name: str) -> int:
+    """Preference ranking for fix variants of the same animal.
+    Higher wins. fixedoutline > fixed > original (no suffix)."""
+    if 'fixedoutline' in folder_name:
+        return 2
+    if 'fixed' in folder_name:
+        return 1
+    return 0
+
+
+def _select_animal_dirs(data_root: Path) -> list[Path]:
+    """Group folders by animal id and pick the preferred variant for each.
+
+    Box keeps the original folder alongside RA-corrected `_fixed` /
+    `_fixedoutline` versions. Without de-dup the parser counts the same
+    arrow twice. We pick the highest-ranked variant per animal id.
+    """
+    by_animal: dict[str, list[Path]] = defaultdict(list)
+    for p in sorted(data_root.iterdir()):
+        if not p.is_dir():
+            continue
+        if not list(p.glob('*_metadata.xml')):
+            logger.warning('skipping %s — no *_metadata.xml found', p.name)
+            continue
+        aid = _animal_id(p.name)
+        if aid is None:
+            logger.warning('skipping %s — no idNN in folder name', p.name)
+            continue
+        by_animal[aid].append(p)
+
+    selected: list[Path] = []
+    for aid, dirs in sorted(by_animal.items()):
+        best = max(dirs, key=lambda d: _variant_rank(d.name))
+        if len(dirs) > 1:
+            superseded = [d.name for d in dirs if d != best]
+            logger.info('%s: using %s (superseded: %s)', aid, best.name, ', '.join(superseded))
+        selected.append(best)
+    return selected
+
+
 def parse_all(
     data_root: Path = DEFAULT_DATA_ROOT,
 ) -> tuple[list[ArrowRecord], list[Anomaly], dict[str, int]]:
@@ -159,12 +248,7 @@ def parse_all(
     all_anomalies: list[Anomaly] = []
     blue_per_animal: dict[str, int] = {}
 
-    for animal_dir in sorted(data_root.iterdir()):
-        if not animal_dir.is_dir():
-            continue
-        if not list(animal_dir.glob('*_metadata.xml')):
-            logger.warning('skipping %s — no *_metadata.xml found', animal_dir.name)
-            continue
+    for animal_dir in _select_animal_dirs(data_root):
         records, anomalies, blue = parse_animal(animal_dir)
         all_records.extend(records)
         all_anomalies.extend(anomalies)
