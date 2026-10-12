@@ -1,0 +1,53 @@
+__pycache__/
+*.pyc
+dataset/
+data/
+.venv/
+.DS_Store
+logs/
+outputs/
+# YOLO pretrained weights auto-downloaded by ultralytics — do not commit
+yolov8n.pt
+yolov8s.pt
+yolov8m.pt
+yolov8l.pt
+yolov8x.pt
+# Local CZI recon dumps
+czi_recon/
+
+# data and outputs
+*.csv
+*.xlsx
+*.xls
+*.tsv
+*.parquet
+*.h5
+*.hdf5
+*.nii
+*.nii.gz
+*.mgz
+*.slp
+*.flac
+*.wav
+*.tif
+*.tiff
+*.npy
+*.npz
+*.pt
+*.pth
+data/
+raw/
+outputs/
+results/
+.env
+*.env
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+
+# editor settings
+.vscode/
+
+# packaging build artefacts
+build/
+*.egg-info/
