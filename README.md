@@ -6,7 +6,7 @@ Counting PV+ cells by hand, and judging whether each one is surrounded by a PNN,
 
 ## Data
 
-Merged two-channel confocal images (PV and PNN stains) of annotated brain regions (for example AC, PL, ILA and CA1), exported from ZEN with the annotators' arrows and region polygons as XML. [STAIN AND MICROSCOPE DETAILS]
+Merged two-channel confocal images (PV and PNN stains) of annotated brain regions (for example AC, PL, ILA and CA1), exported from ZEN with the annotators' arrows and region polygons as XML. Sections of prefrontal cortex and hippocampus were double-labelled with a rabbit anti-parvalbumin antibody (PV+ cells) and *Wisteria floribunda* agglutinin (WFA; perineuronal nets).
 
 Images, annotations and trained weights are not included. They are available on request, pending lab approval.
 
