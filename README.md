@@ -2,7 +2,7 @@
 
 Automated counting of parvalbumin-positive (PV+) cells and perineuronal nets (PNNs) in confocal images of mouse brain sections.
 
-Counting PV+ cells by hand, and judging whether each one is surrounded by a PNN, is slow. This repository trains an object detector on annotations made in ZEN to find PV+ somata and classify each one as `single_pv` (no PNN) or `double` (PV+ with a PNN). It is work in progress: the detector runs end to end, but it is not yet accurate enough to replace manual counts.
+Counting PV+ cells by hand, and judging whether each one is surrounded by a PNN, is slow. This repository trains an object detector on annotations made in ZEN to find PV+ somata and classify each one as `single_pv` (no PNN) or `double` (PV+ with a PNN). It is still in training. The detector runs end to end, but it is not yet accurate enough to replace manual counts.
 
 ## Data
 
@@ -16,9 +16,9 @@ The class of each annotated cell is read from the arrow colour in the ZEN XML, a
 
 Design decisions and the reasons for them are logged in [DECISIONS.md](DECISIONS.md). An existing PNN counter (Ciampi et al. 2022) was considered and not used, because it segments PNNs rather than classifying PV+ cells by PNN status.
 
-## Current results
+## Status: still in training
 
-Output of `pnn-count-tiles` with the current weights on the 380 validation tiles from one held-out animal:
+Images are still being gathered and annotated, so the detector has been trained on only part of the data set and is not yet used for counts. A first test run of `pnn-count-tiles` on 380 validation tiles from one held-out animal gave these numbers:
 
 | Confidence ≥ | Predictions | Same-class clusters (20 px) | Duplicates, % of predictions | In overlap bands, % of duplicates |
 |---|---|---|---|---|
